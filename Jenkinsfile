@@ -11,7 +11,7 @@ pipeline {
         stage('SCM') {
             steps {
                 sh '''
-                rm -rf project
+                rm -rf projectDF
                 git clone https://github.com/Hrishikeshkul/projectDF.git
                 '''
             }
@@ -20,11 +20,19 @@ pipeline {
         stage('BUILD') {
             steps {
                 sh '''
-                cd /mnt/war/project
+                cd /mnt/war/projectDF
                 mvn clean package
                 '''
             }
         }
+        stage('Docker Build') {
+            steps {
+                sh '''
+                docker build -t loginwebapp:latest .
+                '''
+            }
+        }
+
       stage('DEPLOY ON SLAVE') {
             agent {
                 node {
@@ -32,7 +40,13 @@ pipeline {
                     customWorkspace '/mnt/jenkins-slave1'
                 }
             }
-       steps {
+      steps {
                 sh '''
-                docker build -t testing .
+                docker rm -f loginwebapp || true
+                docker run -d -p 8080:8080 --name loginwebapp loginwebapp:latest
+                '''
+            }
+      }
+      }
+}
         
